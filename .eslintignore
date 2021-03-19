@@ -1,0 +1,10 @@
+node_modules
+dist
+tests
+coverage
+
+.serverless
+.webpack
+.idea
+.vscode
+.env
