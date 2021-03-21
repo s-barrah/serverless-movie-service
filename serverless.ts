@@ -17,6 +17,7 @@ const serverlessConfiguration: AWS = {
   },
   // Add the serverless-webpack plugin
   plugins: [
+    'serverless-mocha-plugin',
     'serverless-bundle',
     'serverless-offline',
   ],

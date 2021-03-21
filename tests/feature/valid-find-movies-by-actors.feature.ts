@@ -4,9 +4,8 @@ import MoviesAction from "../lib/actions/movies";
 
 const { expect } = chai;
 
-const getPayload = (filter = '') => `query {
-  findMoviesByActor${filter ? `(${filter})` : ''} {
-    name
+const getPayload = (names = '') => `query {
+  findMoviesByActors(names: ${names}) {
     movies {
      title
      poster_path
@@ -15,19 +14,19 @@ const getPayload = (filter = '') => `query {
   }
 }`
 
-const runMovieTest = (name) => {
-    describe(`User visits the endpoint and searches for movies by actor ${name}`, () => {
+const runFindMoviesByActorsTest = (names) => {
+    describe(`User submits a request to find movies by two actors ${names}`, () => {
         let response: any = {};
 
         before((done) => {
-            MoviesAction.graphQL(getPayload(`name: "${name}"`))
+            MoviesAction.graphQL(getPayload(`"${names}"`))
                 .then((body) => {
                     response = body;
                     done();
                 })
                 .catch((err) => {
-                    console.log('runMovieTest --- err: ', err)
-                    done(err);
+                    console.log('runFindMoviesByActorsTest --- err: ', err)
+                    done();
                 });
         });
 
@@ -41,8 +40,8 @@ const runMovieTest = (name) => {
             done();
         });
 
-        it('should return the actors name', (done) => {
-            expect(response.data.name).to.equal(name);
+        it('should return a movies array', (done) => {
+            expect(response.data).to.have.own.property('movies');
             done();
         });
 
@@ -50,11 +49,13 @@ const runMovieTest = (name) => {
             expect(response.data.movies.length > 0).to.equal(true);
             done();
         });
+
     })
 }
 
-describe('GraphQL API - findMoviesByActor', () => {
-    runMovieTest('Al Pacino');
-    runMovieTest('Robert De Niro');
+describe('GraphQL API - getMoviesByActors - Valid request', () => {
+    runFindMoviesByActorsTest(['Al Pacino', 'Robert De Niro']);
+    runFindMoviesByActorsTest(['Al Pacino', 'Samuel L Jackson']);
+    runFindMoviesByActorsTest(['Robert De Niro', 'Samuel L Jackson']);
 })
 

@@ -23,10 +23,10 @@ export const graphqlHandler: APIGatewayProxyHandler = (
     graphql(graphQLService.getSchema(), event.body)
         .then((res) => {
             if (res.errors) {
+                console.error(res.errors);
                 throw new Error(res.errors[0].message);
             }
             const queryType = Object.keys(res.data)[0];
-            console.log('graphqlHandler ---- queryType: ', queryType);
             const data = res.data[queryType];
             if (!data) {
                 throw new ResponseModel(null, StatusCode.BAD_REQUEST, Status.BAD_REQUEST);
@@ -34,7 +34,7 @@ export const graphqlHandler: APIGatewayProxyHandler = (
             return new ResponseModel(data, StatusCode.OK, Status.SUCCESS);
         })
         .catch((error) => {
-            console.error(error);
+            console.error(`graphql lambda error - ${error}`);
             return error instanceof ResponseModel
                 ? error
                 : new ResponseModel({}, StatusCode.ERROR, Status.ERROR);

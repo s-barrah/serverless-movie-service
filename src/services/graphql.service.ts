@@ -3,30 +3,13 @@ import {
   GraphQLObjectType,
   GraphQLString,
   GraphQLNonNull,
-  GraphQLList,
-  GraphQLInt,
-  GraphQLFloat,
 } from 'graphql';
 
+// Services
 import MovieService from './movie.service';
 
-const MovieType = new GraphQLObjectType({
-  name: 'Movie',
-  fields: {
-    id: { type: GraphQLInt },
-    poster_path: { type: GraphQLString },
-    title: { type: GraphQLString },
-    vote_average: { type: GraphQLFloat },
-  },
-});
-
-const ActorType = new GraphQLObjectType({
-  name: 'Actor',
-  fields: {
-    name: { type: GraphQLString },
-    movies: { type: new GraphQLList(MovieType) },
-  },
-});
+// Types
+import { MatchingActorsType, ActorsType } from "../types/movie.type";
 
 export default class GraphqlService {
   /**
@@ -40,18 +23,19 @@ export default class GraphqlService {
       query: new GraphQLObjectType({
         name: 'Query',
         fields: () => ({
-          message: {
-            type: GraphQLString,
-            resolve: () => 'Hello World',
+          findMoviesByActors: {
+            args: {
+              names: { type: new GraphQLNonNull(GraphQLString) },
+            },
+            type: MatchingActorsType,
+            resolve: (_parent, args) => movieService.getMoviesByActors(args.names),
           },
-          findMoviesByActor: {
+          getSuggestedActors: {
             args: {
               name: { type: new GraphQLNonNull(GraphQLString) },
             },
-            type: ActorType,
-            resolve: (_parent, args) => {
-              return movieService.getMoviesByActor(args.name);
-            },
+            type: ActorsType,
+            resolve: (_parent, args) => movieService.getSuggestedActors(args.name),
           },
         }),
       }),

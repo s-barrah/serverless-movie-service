@@ -26,7 +26,7 @@ export enum StatusCode {
   BAD_REQUEST = 400,
 }
 
-const RESPONSE_HEADERS: IResponseHeader = {
+export const RESPONSE_HEADERS: IResponseHeader = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*', // Required for CORS support to work
   'Access-Control-Allow-Credentials': true, // Required for cookies, authorization headers with HTTPS
