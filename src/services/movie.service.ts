@@ -48,7 +48,7 @@ export default class MovieService {
       const actor = await this.getPerson(id);
       let movies;
       if (withMovies) {
-        const movieResults = await this.getMovies(id);
+        const movieResults = await this.getMoviesByActor(id);
         movies = movieResults.filter((movie) => !!movie)
       }
       const results = {
@@ -77,7 +77,7 @@ export default class MovieService {
     const promises = namesArray.map(async (name) => {
       const response = await this.getActor(name);
       const { id } = response[0];
-      const movies = await this.getMovies(id);
+      const movies = await this.getMoviesByActor(id);
       return movies.filter((movie) => !!movie)
     });
     const result = await Promise.all(promises);
@@ -91,7 +91,7 @@ export default class MovieService {
     };
   }
 
-  async getMovies(actorId: number): Promise<IMovie[]> {
+  async getMoviesByActor(actorId: number): Promise<IMovie[]> {
     const actorMoviesAndCredits = await this.getMoviesAndCredits(actorId);
     const promises = actorMoviesAndCredits.map(async (movieCredit) => {
       const movie = await this.getMovie(movieCredit.id);
