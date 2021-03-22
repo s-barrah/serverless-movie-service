@@ -1,13 +1,23 @@
 import axios from 'axios';
 
-// Interfaces
-import { IMovie } from '../interfaces/movie.interface';
-import { IActor, ISearchPersonResult } from '../interfaces/actor.interface';
-
 // Models
 import ResponseModel, {Status, StatusCode} from "../models/response.model";
 
+
+// Interfaces
+import { IMovieCredit } from '../interfaces/movie-credit.interface';
+// @ts-ignore
+import { IMovie } from "../interfaces/movie.interface";
+import { ISearchPersonResult } from "../interfaces/search-person.interface";
+import { IActor } from '../interfaces/actor.interface';
+interface IActorWithMovies {
+  movies?: IMovie[]
+}
+
 const { API_URL, API_KEY } = process.env;
+const TMDB_STATIC_ASSETS_URL = "https://image.tmdb.org/t/p/w500";
+const PLACEHOLDER_ASSET_URL = "https://via.placeholder.com/500.jpg"
+
 
 export default class MovieService {
 
@@ -30,16 +40,25 @@ export default class MovieService {
   /**
    * Function to get suggested actors
    * @param name
+   * @param withMovies
    */
-  async getSuggestedActors(name: string) {
+  async getSuggestedActors(name: string, withMovies: boolean = false): Promise<{ actors: IActorWithMovies[]}> {
     const response = await this.getActor(name);
     const promises = response.map(async ( { id }) => {
       const actor = await this.getPerson(id);
-      const movies = await this.getMoviesAndCredits(id);
-      return {
+      let movies;
+      if (withMovies) {
+        const movieResults = await this.getMovies(id);
+        movies = movieResults.filter((movie) => !!movie)
+      }
+      const results = {
         ...actor,
-        movies,
-      };
+      } as IActorWithMovies;
+      if (movies) {
+        results.movies = movies;
+      }
+
+      return results;
     });
     const actors = await Promise.all(promises);
     return { actors };
@@ -50,7 +69,7 @@ export default class MovieService {
    * where two actors are cast
    * @param names
    */
-  async getMoviesByActors(names: string) {
+  async getMoviesByActors(names: string): Promise<{ movies: IMovie[]}> {
     const namesArray = names.split(',')
     if (namesArray.length > 2) {
       throw new ResponseModel(null, StatusCode.BAD_REQUEST, Status.BAD_REQUEST);
@@ -58,15 +77,27 @@ export default class MovieService {
     const promises = namesArray.map(async (name) => {
       const response = await this.getActor(name);
       const { id } = response[0];
-      return this.getMoviesAndCredits(id);
+      const movies = await this.getMovies(id);
+      return movies.filter((movie) => !!movie)
     });
     const result = await Promise.all(promises);
     const matches = result[0].filter((movie) => {
-      return result[1].find((movie2) => movie.id === movie2.id);
+      if (movie.id) {
+        return result[1].find((movie2) => movie?.id === movie2?.id);
+      }
     })
     return {
-      movies: matches,
+      movies: [...new Set(matches)],
     };
+  }
+
+  async getMovies(actorId: number): Promise<IMovie[]> {
+    const actorMoviesAndCredits = await this.getMoviesAndCredits(actorId);
+    const promises = actorMoviesAndCredits.map(async (movieCredit) => {
+      const movie = await this.getMovie(movieCredit.id);
+      return movie || null
+    })
+    return Promise.all(promises)
   }
 
   /**
@@ -74,7 +105,7 @@ export default class MovieService {
    * where an actor is credited
    * @param actorId
    */
-  getMoviesAndCredits(actorId: number): Promise<IMovie[]> {
+  getMoviesAndCredits(actorId: number): Promise<IMovieCredit[]> {
     return axios
       .get(
         `${API_URL}person/${actorId}/combined_credits?api_key=${API_KEY}&language=en-US`
@@ -82,10 +113,10 @@ export default class MovieService {
       .then((response) => {
         return response?.data?.cast?.map((movie) => {
           const { poster_path, backdrop_path } = movie;
-          const placeholder = `https://via.placeholder.com/500.jpg?${movie.title}`
+          const placeholder = `${PLACEHOLDER_ASSET_URL}?${movie.title}`
           const movieClone = movie;
-          movieClone.poster_path = poster_path ? `https://image.tmdb.org/t/p/w500${poster_path}` : placeholder;
-          movieClone.backdrop_path = backdrop_path ? `https://image.tmdb.org/t/p/w500${backdrop_path}` : placeholder;
+          movieClone.poster_path = poster_path ? `${TMDB_STATIC_ASSETS_URL}${poster_path}` : placeholder;
+          movieClone.backdrop_path = backdrop_path ? `${TMDB_STATIC_ASSETS_URL}${backdrop_path}` : placeholder;
           return movieClone;
         });
       })
@@ -99,16 +130,23 @@ export default class MovieService {
    * from movie endpoint
    * @param movieId
    */
-  getMovie(movieId: number) {
-    return axios
-        .get(`${API_URL}movie/${movieId}?api_key=${API_KEY}&language=en-US`)
-        .then((response) => {
-          const movie = response.data;
-          movie.poster_path = `https://image.tmdb.org/t/p/w500${response.data.poster_path}`;
-          movie.backdrop_path = `https://image.tmdb.org/t/p/w500${response.data.backdrop_path}`;
-          return movie
-        })
-        .catch((error) => console.log('getMovie ERROR: ', error));
+  getMovie(movieId: number): Promise<IMovie> {
+    return new Promise((resolve) => {
+      return axios
+          .get(`${API_URL}movie/${movieId}?api_key=${API_KEY}&language=en-US`)
+          .then((response) => {
+            const movie = response.data;
+            const { poster_path, backdrop_path } = movie;
+            const placeholder = `${PLACEHOLDER_ASSET_URL}?${movie.title}`
+            movie.poster_path = poster_path ? `${TMDB_STATIC_ASSETS_URL}${poster_path}` : placeholder;
+            movie.backdrop_path = backdrop_path ? `${TMDB_STATIC_ASSETS_URL}${backdrop_path}` : placeholder;
+            resolve(movie)
+          })
+          .catch(() => {
+            resolve(null)
+          });
+    })
+
   }
 
   /**

@@ -7,6 +7,13 @@ const MovieType = new GraphQLObjectType({
         poster_path: { type: GraphQLString },
         title: { type: GraphQLString },
         vote_average: { type: GraphQLFloat },
+        overview: { type: GraphQLString },
+        original_language: { type: GraphQLString },
+        original_title: { type: GraphQLString },
+        release_date: { type: GraphQLString },
+        vote_count: { type: GraphQLInt },
+        backdrop_path: { type: GraphQLString },
+        popularity: { type: GraphQLInt },
     },
 });
 

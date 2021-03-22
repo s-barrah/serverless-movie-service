@@ -19,11 +19,8 @@ yarn install
 
 You will need to setup environment variables, to do this copy the `.env.example` to `.env`.
 
-You can simulate lambda and API endpoints locally using the following command:
+You can simulate lambda and API endpoints locally using the following command `serverless offline start` or `yarn dev`
 
-```bash
-serverless offline start
-```
 
 #### Endpoints
 

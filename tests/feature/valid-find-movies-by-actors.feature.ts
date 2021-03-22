@@ -1,5 +1,6 @@
 import * as chai from 'chai';
 
+// @ts-ignore
 import MoviesAction from "../lib/actions/movies";
 
 const { expect } = chai;
@@ -18,16 +19,15 @@ const runFindMoviesByActorsTest = (names) => {
     describe(`User submits a request to find movies by two actors ${names}`, () => {
         let response: any = {};
 
-        before((done) => {
+        before(function(done){
+            this.timeout(90000);
+
             MoviesAction.graphQL(getPayload(`"${names}"`))
                 .then((body) => {
                     response = body;
                     done();
                 })
-                .catch((err) => {
-                    console.log('runFindMoviesByActorsTest --- err: ', err)
-                    done();
-                });
+                .catch(() => done());
         });
 
         it('should return a successful status message', (done) => {

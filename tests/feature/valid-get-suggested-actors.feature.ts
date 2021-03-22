@@ -1,5 +1,6 @@
 import * as chai from 'chai';
 
+// @ts-ignore
 import MoviesAction from "../lib/actions/movies";
 
 const { expect } = chai;
